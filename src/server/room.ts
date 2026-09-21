@@ -150,8 +150,9 @@ export class GameRoom {
             }
           }
           if (!move) {
-            move = chooseMove(state.board, seat, 'normal', Math.random, nextSeats);
+            move = chooseMove(state.board, seat, 'easy', Math.random, nextSeats);
           }
+
           if (!move) break;
           const res = this.core.move(seat, move.q, move.r);
           if (!res.ok) break;

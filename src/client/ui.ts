@@ -31,9 +31,10 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
     bombEffect: 'destroy',
   },
   com: ['none', 'engine', 'engine'],
-  level: 'normal',
+  level: 'easy',
   fixThirdSeat: false,
 };
+
 
 export function createQuickSettings(humanCount: 1 | 2 | 3): GameSettings {
   const com: [ComType, ComType, ComType] =
@@ -355,11 +356,12 @@ export function renderSetup(root: HTMLElement, handlers: SetupHandlers): void {
           <label class="field">
             <span class="field-label">COM の強さ</span>
             <select id="level" class="styled-select">
-              <option value="easy">かんたん (ランダム)</option>
-              <option value="normal" selected>ふつう (1手読み)</option>
+              <option value="easy" selected>かんたん (ランダム)</option>
+              <option value="normal">ふつう (1手読み)</option>
               <option value="hard">つよい (2手読み)</option>
             </select>
           </label>
+
           <div class="info-tip">
             <span class="tip-icon">💡</span>
             <span>対局中の「AI助言」でWorkers AIの推薦手を聞けます。全員COMで観戦も可能です。</span>

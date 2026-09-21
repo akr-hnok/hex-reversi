@@ -22,12 +22,24 @@ export interface GameState {
 }
 
 /**
+ * 順列交代方式の手番順列テーブル（全6順列）。
+ * - 4手待ちを完全排除し、最大待ち手数を3手に抑える（待たされ感の解消）。
+ * - 各順列の末尾と次順列の先頭が異なるため、連続着手は発生しない。
+ * - 各プレイヤーが1番手・2番手・3番手を完全に同数（18手ごとに各2回ずつ）担当し公平性を担保。
+ */
+export const TURN_PERMUTATIONS: readonly (readonly [StoneColor, StoneColor, StoneColor])[] = [
+  [0, 1, 2],
+  [0, 2, 1],
+  [2, 0, 1],
+  [2, 1, 0],
+  [1, 2, 0],
+  [1, 0, 2],
+];
+
+/**
  * ターン数(0始まり)から手番プレイヤーの席を返す。
- * 3手を1ラウンドとし、各ラウンドの開始席が1つずつ移る(0,1,2 → 1,2,0 → 2,0,1 …)。
- * - ラウンド内の位置による構造差(最終手番が最も得をする)はローテーションで均等化する
- *   (固定順ではシミュレーションで最終手番が100%勝利するバイアスが確認済み)。
- * - 「最初の手」「最後の手」はローテーションだけでは均されない(総手数が3の倍数+1のため)。
- *   そこで開始席と回転方向を対局ごとにランダム化し、先攻・終盤ボーナスをランダムな席に配る。
+ * - 順列交代方式により、最大待ち手数を3手以下に抑制（4手待ちゼロ）。
+ * - 開始席と回転方向を対局ごとにランダム化し、先攻・終盤ボーナスを公平に分散。
  * - fixThirdSeat(ハンデ): 席2を常に3番手(各ラウンドの最終手番)に固定する。
  *   1番手と2番手はラウンドごとに交代し、先攻の固定は避ける。
  */
@@ -44,9 +56,12 @@ export function seatForTurn(
     // ラウンド偶数: [0,1,2]、奇数: [1,0,2]
     return ((round + pos) % 2 === 0 ? 0 : 1) as StoneColor;
   }
-  const step = turn + Math.floor(turn / PLAYER_COUNT);
-  return (((offset + direction * step) % PLAYER_COUNT) + PLAYER_COUNT) % PLAYER_COUNT as StoneColor;
+  const permIdx = Math.floor(turn / PLAYER_COUNT) % TURN_PERMUTATIONS.length;
+  const pos = turn % PLAYER_COUNT;
+  const base = TURN_PERMUTATIONS[permIdx][pos];
+  return ((((offset + direction * base) % PLAYER_COUNT) + PLAYER_COUNT) % PLAYER_COUNT) as StoneColor;
 }
+
 
 export interface CreateGameOptions {
   /** シードから決めるのが一般的(再現性のあるランダム席)。 */

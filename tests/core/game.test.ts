@@ -49,9 +49,9 @@ describe('createGame + applyMove', () => {
     }
   });
 
-  it('手番順はラウンドごとにローテーションする(0,1,2 → 1,2,0 → …)', () => {
-    // seatForTurn(t) = (t + floor(t/3)) % 3
-    expect([0, 1, 2, 3, 4, 5, 6].map((t) => seatForTurn(t))).toEqual([0, 1, 2, 1, 2, 0, 2]);
+  it('手番順は順列交代方式で進行する([0,1,2] → [0,2,1] → …)', () => {
+    // 最初の2順列(6手) + 3順列目の先頭: [0, 1, 2, 0, 2, 1, 2]
+    expect([0, 1, 2, 3, 4, 5, 6].map((t) => seatForTurn(t))).toEqual([0, 1, 2, 0, 2, 1, 2]);
 
     let state = createGame(createBoard({ radius: 2, gimmicks: false }));
     const seats = [state.current];
@@ -60,8 +60,33 @@ describe('createGame + applyMove', () => {
       state = applyMove(state, m.q, m.r);
       seats.push(state.current);
     }
-    expect(seats).toEqual([0, 1, 2, 1, 2, 0, 2]);
+    expect(seats).toEqual([0, 1, 2, 0, 2, 1, 2]);
   });
+
+  it('手番の間隔は最大3手で、連続着手および4手以上の空きが発生しない', () => {
+    for (let offset = 0; offset < 3; offset++) {
+      for (const dir of [1, 2] as const) {
+        let prev = -1;
+        const lastTurn: [number, number, number] = [-1, -1, -1];
+        // 60ターン分(10サイクル)検証
+        for (let t = 0; t < 60; t++) {
+          const seat = seatForTurn(t, offset, dir);
+          // 連続着手が発生しないこと
+          expect(seat).not.toBe(prev);
+          prev = seat;
+
+          if (lastTurn[seat] !== -1) {
+            const gap = t - lastTurn[seat] - 1;
+            // 待ち手数は 1手, 2手, 3手のいずれか(4手待ちはゼロ)
+            expect(gap).toBeGreaterThanOrEqual(1);
+            expect(gap).toBeLessThanOrEqual(3);
+          }
+          lastTurn[seat] = t;
+        }
+      }
+    }
+  });
+
 
   it('開始席と回転方向を指定できる(対局ごとのランダム化用)', () => {
     const board = createBoard({ radius: 2, gimmicks: false });
